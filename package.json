@@ -1,0 +1,11 @@
+{
+  "name": "restify-sample",
+  "version": "0.1.0",
+  "description": "An example of simple REST service with Restify.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alexander Tchitchigin",
+  "license": "MIT"
+}
