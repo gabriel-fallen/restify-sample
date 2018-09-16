@@ -1,12 +1,13 @@
 var os = require('os');
+var fs = require('fs');
 var restify = require('restify');
+var errs = require('restify-errors');
 
 var server = restify.createServer();
 
-var shoppingCart = {
-  goods: ["Apple pie", "Bananas", "Orange juice"],
-  totalPrice: 40
-};
+var cartFile = "cart.json";
+var shoppingCart = JSON.parse(fs.readFileSync(cartFile));
+
 
 server.use(restify.plugins.bodyParser({
   maxBodySize: 0,
@@ -36,8 +37,14 @@ server.get('/cart', function(req, res, next) {
 server.post('/cart/add', function(req, res, next) {
   shoppingCart.goods.push(req.body.name);
   shoppingCart.totalPrice += req.body.price;
-  res.send(shoppingCart);
-  return next();
+  fs.writeFile(cartFile, JSON.stringify(shoppingCart), function(err) {
+    if (err) {
+      var httpErr = new errs.InternalServerError(err);
+      return next(httpErr);
+    }
+    res.send(shoppingCart);
+    return next();
+  });
 });
 
 server.listen(8080, function() {
