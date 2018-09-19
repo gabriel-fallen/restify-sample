@@ -1,12 +1,23 @@
-var os = require('os');
-var fs = require('fs');
-var restify = require('restify');
-var errs = require('restify-errors');
+const os = require('os');
+const fs = require('fs');
+const restify = require('restify');
+const errs = require('restify-errors');
 
-var server = restify.createServer();
+const server = restify.createServer();
 
-var cartFile = "cart.json";
-var shoppingCart = JSON.parse(fs.readFileSync(cartFile));
+const cartFile = "cart.json";
+let shoppingCart = JSON.parse(fs.readFileSync(cartFile));
+
+function saveCart() {
+  return new Promise((resolve, reject) => {
+    fs.writeFile(cartFile, JSON.stringify(shoppingCart), function(err) {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(shoppingCart);
+    });
+  });
+}
 
 
 server.use(restify.plugins.bodyParser({
@@ -29,24 +40,23 @@ server.get('/*', restify.plugins.serveStatic({
   default: 'index.html'
 }));
 
-server.get('/cart', function(req, res, next) {
+server.get('/cart', (req, res, next) => {
   res.send(shoppingCart);
   return next();
 });
 
-server.post('/cart/add', function(req, res, next) {
+server.post('/cart/add', (req, res, next) => {
   shoppingCart.goods.push(req.body.name);
   shoppingCart.totalPrice += req.body.price;
-  fs.writeFile(cartFile, JSON.stringify(shoppingCart), function(err) {
-    if (err) {
-      var httpErr = new errs.InternalServerError(err);
-      return next(httpErr);
-    }
-    res.send(shoppingCart);
+  saveCart().then((data) => {
+    res.send(data);
     return next();
+  }).catch((err) => {
+    var httpErr = new errs.InternalServerError(err);
+    return next(httpErr);
   });
 });
 
-server.listen(8080, function() {
+server.listen(8080, () => {
   console.log('%s listening at %s', server.name, server.url);
 });
